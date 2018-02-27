@@ -41,7 +41,7 @@ int start_pcap()
     char src_host[256];
     char udp_port[256];
 
-    char filter_format[]="udp port %s and src host %s and not icmp";
+    char filter_format[]="udp src port %s and src host %s and not icmp";
     char filter_string[1000];
 
     struct bpf_program filter;
