@@ -17,6 +17,7 @@ lpcapsocket::lpcapsocket()
 }
 
 void process_packet(u_char *, const struct pcap_pkthdr *, const u_char *);
+int get_udp_payload_size(const u_char * , int);
 void process_ip_packet(const u_char * , int);
 void print_ip_packet(const u_char * , int);
 void print_tcp_packet(const u_char *  , int );
@@ -26,7 +27,7 @@ void PrintData (const u_char * , int);
 
 FILE *logfile;
 struct sockaddr_in source,dest;
-int tcp=0,udp=0,icmp=0,others=0,igmp=0,total=0,i,j;
+int tcp=0,udp=0,icmp=0,others=0,igmp=0,total=0,i,j,udp_bytes=0;
 
 int start_pcap()
 {
@@ -154,6 +155,7 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 
         case 17: //UDP Protocol
             ++udp;
+            udp_bytes+=get_udp_payload_size(buffer,size);
             print_udp_packet(buffer , size);
             break;
 
@@ -161,7 +163,7 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
             ++others;
             break;
     }
-    printf("TCP : %d   UDP : %d   ICMP : %d   IGMP : %d   Others : %d   Total : %d\r", tcp , udp , icmp , igmp , others , total);
+    printf("TCP : %d   UDP : %d   ICMP : %d   IGMP : %d   Others : %d   Total : %d UDP bytes : %d\r", tcp , udp , icmp , igmp , others , total,udp_bytes);
     fflush(stdout);
 }
 
@@ -255,6 +257,21 @@ void print_tcp_packet(const u_char * Buffer, int Size)
     PrintData(Buffer + header_size , Size - header_size );
 
     fprintf(logfile , "\n###########################################################");
+}
+
+int get_udp_payload_size(const u_char *Buffer , int Size)
+{
+    unsigned short iphdrlen;
+
+    struct iphdr *iph = (struct iphdr *)(Buffer +  sizeof(struct ethhdr));
+    iphdrlen = iph->ihl*4;
+
+    struct udphdr *udph = (struct udphdr*)(Buffer + iphdrlen  + sizeof(struct ethhdr));
+
+    int header_size =  sizeof(struct ethhdr) + iphdrlen + sizeof udph;
+
+    int udp_payload_len=ntohs(udph->len)-sizeof(udphdr);
+    return udp_payload_len;
 }
 
 void print_udp_packet(const u_char *Buffer , int Size)
