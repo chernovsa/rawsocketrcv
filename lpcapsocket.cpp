@@ -40,7 +40,7 @@ int start_pcap()
     char src_host[256];
     char udp_port[256];
 
-    char filter_format[]="udp port %s and src host %s";
+    char filter_format[]="udp port %s and src host %s and not icmp";
     char filter_string[1000];
 
     struct bpf_program filter;
@@ -162,6 +162,7 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
             break;
     }
     printf("TCP : %d   UDP : %d   ICMP : %d   IGMP : %d   Others : %d   Total : %d\r", tcp , udp , icmp , igmp , others , total);
+    fflush(stdout);
 }
 
 void print_ethernet_header(const u_char *Buffer, int Size)
