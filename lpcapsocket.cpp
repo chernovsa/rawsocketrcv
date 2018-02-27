@@ -33,8 +33,26 @@ int start_pcap()
     pcap_if_t *alldevsp , *device;
     pcap_t *handle; //Handle of the device that shall be sniffed
 
-    char errbuf[100] , *devname , devs[100][100];
+    char *devname , devs[100][100];
     int count = 1 , n;
+
+    char errbuf[PCAP_ERRBUF_SIZE];
+    char src_host[256];
+    char udp_port[256];
+
+    char filter_format[]="udp port %s and src host %s";
+    char filter_string[1000];
+
+    struct bpf_program filter;
+    // Скомпилированное выражение для фильтра
+
+    // Выражение для фильтра
+
+    bpf_u_int32 mask;
+    // Сетевая маска нашего интерфейса
+
+    bpf_u_int32 net;
+    // IP адрес нашего интерфейса
 
     //First get the list of available devices
     printf("Finding available devices ... ");
@@ -62,6 +80,11 @@ int start_pcap()
     scanf("%d" , &n);
     devname = devs[n];
 
+    /****set pcap filter*************/
+    // Строка с ошибкой
+
+
+    pcap_lookupnet(devname, &net, &mask, errbuf);
     //Open the device for sniffing
     printf("Opening device %s for sniffing ... " , devname);
     handle = pcap_open_live(devname , 65536 , 1 , 0 , errbuf);
@@ -79,10 +102,31 @@ int start_pcap()
         printf("Unable to create file.");
     }
 
-    //Put the device in sniff loop
-    pcap_loop(handle , -1 , process_packet , NULL);
 
-    return 0;
+    printf("Etner src host\n");
+    scanf("%s",&src_host);
+    printf("Enter udp port\n");
+    scanf("%s",udp_port);
+
+    sprintf(filter_string,filter_format,udp_port,src_host);
+    printf("get filter string \'%s\'\n",filter_string);
+
+    if (pcap_compile(handle, &filter, filter_string, 0, net)!=0)
+    {
+        fprintf(stderr, "Couldn't compile filter  %s, error: %s \n"  , filter_string,pcap_geterr);
+        exit(1);
+    }
+    if (pcap_setfilter(handle, &filter)!=0)
+    {
+        fprintf(stderr, "Couldn't set filter  %s, error: %s \n"  , filter_string,pcap_geterr);
+        exit(1);
+    }
+    /*****************************************/
+
+
+    //Put the device in sniff loop
+    return pcap_loop(handle , -1 , process_packet , NULL);
+
 }
 
 void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *buffer)
