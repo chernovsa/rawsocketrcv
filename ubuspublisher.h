@@ -5,7 +5,7 @@
 class UbusPublisher
 {
 public:
-    UbusPublisher();
+    UbusPublisher(){}
 };
 
 #endif // UBUSPUBLISHER_H
