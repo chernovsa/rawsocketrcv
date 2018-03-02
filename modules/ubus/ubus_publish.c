@@ -1,4 +1,4 @@
-// ubus-sample.c
+// ubus-sniffer.c
 
 #include <unistd.h>
 #include <signal.h>
@@ -12,6 +12,8 @@ static struct ubus_context *ctx;
 static struct blob_buf b;
 
 static int value = 0;
+static int packets=123;
+static int bytes=456;
 
 static int
 status_handler(struct ubus_context *ctx, struct ubus_object *obj,
@@ -19,8 +21,8 @@ status_handler(struct ubus_context *ctx, struct ubus_object *obj,
         struct blob_attr *msg)
 {
     blob_buf_init(&b, 0);
-    blobmsg_add_string(&b, "result", "ok");
-    blobmsg_add_u16(&b, "value", value);
+    blobmsg_add_u64(&b, "packets", packets);
+    blobmsg_add_u64(&b, "bytes", bytes);
 
     ubus_send_reply(ctx, req, b.head);
 
@@ -62,14 +64,13 @@ static int add_handler(struct ubus_context *ctx, struct ubus_object *obj,
 
 static const struct ubus_method methods[] = {
     { .name = "status" , .handler = status_handler } ,
-    UBUS_METHOD("add", add_handler, add_policy),
 };
 
-static struct ubus_object_type sample_object_type = UBUS_OBJECT_TYPE("sample", methods);
+static struct ubus_object_type sniffer_object_type = UBUS_OBJECT_TYPE("sniffer", methods);
 
 static struct ubus_object smaple_object = {
-    .name = "sample",
-    .type = &sample_object_type ,
+    .name = "sniffer",
+    .type = &sniffer_object_type ,
     .methods = methods,
     .n_methods = ARRAY_SIZE(methods),
 };
