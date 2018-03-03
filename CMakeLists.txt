@@ -28,7 +28,7 @@ FIND_PATH(tread_include_dir thread)
 INCLUDE_DIRECTORIES(${thread_include_dir})
 
 ADD_EXECUTABLE(rawsocketrcv lpcapsocket.cpp  main.cpp  snifferdatamanager.cpp)
-SET_TARGET_PROPERTIES(rawsocketrcv PROPERTIES OUTPUT_NAME rawsocketrcv)
+SET_TARGET_PROPERTIES(rawsocketrcv PROPERTIES OUTPUT_NAME rawsocketrcvd)
 TARGET_LINK_LIBRARIES(rawsocketrcv ${thread_library} ${pcap_library} ubus_publish ${ubox_library} ${ubus_library})
 
 #INSTALL(TARGETS ubus cli
