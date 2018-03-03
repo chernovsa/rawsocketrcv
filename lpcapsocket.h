@@ -1,7 +1,6 @@
 #ifndef LPCAPSOCKET_H
 #define LPCAPSOCKET_H
 
-#define UNUSED(x) (void)(x)
 typedef void (*sniffer_data_handler)(char *, int);
 typedef struct
 {
@@ -11,7 +10,7 @@ typedef struct
     const char* src_ipaddr;
     const char* src_port;
 } sniffer_arg;
-
+enum {PARAM_STRING_SIZE=256};
 int start_pcap(sniffer_arg *processArg);
 
 #endif // LPCAPSOCKET_H

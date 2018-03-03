@@ -12,6 +12,7 @@
 #include<netinet/tcp.h>   //Provides declarations for tcp header
 #include<netinet/ip.h>    //Provides declarations for ip header
 
+#define UNUSED(x) (void)(x)
 void pcap_process_packet(u_char *, const struct pcap_pkthdr *, const u_char *);
 int get_udp_payload_size(const u_char * );
 void process_ip_packet(const u_char * , int);
@@ -30,7 +31,6 @@ int start_pcap(sniffer_arg *processArg)
     int count = 1 , n;
 
     char errbuf[PCAP_ERRBUF_SIZE];
-    enum {PARAM_STRING_SIZE=256};
     char src_host[PARAM_STRING_SIZE];
     char udp_port[PARAM_STRING_SIZE];
 
