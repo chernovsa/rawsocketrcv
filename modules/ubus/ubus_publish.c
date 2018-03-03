@@ -10,6 +10,7 @@
 #include "ubus_publish.h"
 #define SERVICE_NAME "sniffer"
 #define METHOD_NAME "status"
+#define EVENT_NAME "sniffer.status"
 static struct ubus_context *ctx;
 static struct blob_buf b;
 
@@ -81,7 +82,7 @@ static void test_client_notify_cb(struct uloop_timeout *timeout)
         if (err)
                 fprintf(stderr, "Notify failed: %s\n", ubus_strerror(err));
 
-        err=ubus_send_event(ctx,METHOD_NAME,b.head);
+        err=ubus_send_event(ctx,EVENT_NAME,b.head);
         if (err)
                 fprintf(stderr, "Event failed: %s\n", ubus_strerror(err));
 
