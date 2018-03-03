@@ -11,12 +11,7 @@
 #include<netinet/udp.h>   //Provides declarations for udp header
 #include<netinet/tcp.h>   //Provides declarations for tcp header
 #include<netinet/ip.h>    //Provides declarations for ip header
-lpcapsocket::lpcapsocket()
-{
-
-}
-
-void process_packet(u_char *, const struct pcap_pkthdr *, const u_char *);
+void pcap_process_packet(u_char *, const struct pcap_pkthdr *, const u_char *);
 int get_udp_payload_size(const u_char * , int);
 void process_ip_packet(const u_char * , int);
 void print_ip_packet(const u_char * , int);
@@ -29,7 +24,7 @@ FILE *logfile;
 struct sockaddr_in source,dest;
 int tcp=0,udp=0,icmp=0,others=0,igmp=0,total=0,i,j,udp_bytes=0;
 
-int start_pcap()
+int start_pcap(sniffer_arg *processArg)
 {
     pcap_if_t *alldevsp , *device;
     pcap_t *handle; //Handle of the device that shall be sniffed
@@ -126,11 +121,11 @@ int start_pcap()
 
 
     //Put the device in sniff loop
-    return pcap_loop(handle , -1 , process_packet , NULL);
+    return pcap_loop(handle , -1 , pcap_process_packet , (u_char*)processArg);
 
 }
 
-void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *buffer)
+void pcap_process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *buffer)
 {
     int size = header->len;
 
@@ -154,9 +149,17 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
             break;
 
         case 17: //UDP Protocol
+    {
             ++udp;
-            udp_bytes+=get_udp_payload_size(buffer,size);
+            int bytes=get_udp_payload_size(buffer,size);
+            udp_bytes+=bytes;
+            if (args)
+            {
+            sniffer_arg* processArg=(sniffer_arg*)args;
+            (*processArg->handler)(processArg->instance,bytes);
+            }
             print_udp_packet(buffer , size);
+    }
             break;
 
         default: //Some Other Protocol like ARP etc.

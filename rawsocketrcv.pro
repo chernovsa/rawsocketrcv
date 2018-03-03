@@ -3,10 +3,12 @@ CONFIG += console c++11
 CONFIG -= app_bundle
 CONFIG -= qt
 SOURCES += main.cpp \
-    lpcapsocket.cpp
+    lpcapsocket.cpp \
+    snifferdatamanager.cpp
 
 HEADERS += \
-    lpcapsocket.h
+    lpcapsocket.h \
+    snifferdatamanager.h
 
 #thread
 unix:!macx: LIBS += -L/usr/lib/i386-linux-gnu/ -pthread
