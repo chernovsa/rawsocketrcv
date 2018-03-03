@@ -101,7 +101,7 @@ int ubus_main(ubus_sniffer_arg *sniff_arg)
     ctx = ubus_connect(ubus_socket);
     if (!ctx) {
         fprintf(stderr, "Failed to connect to ubus\n");
-        return -1;
+        exit(1);
     }
 
     ubus_add_uloop(ctx);
@@ -109,6 +109,7 @@ int ubus_main(ubus_sniffer_arg *sniff_arg)
     ret = ubus_add_object(ctx, &smaple_object);
     if (ret) {
         fprintf(stderr, "Failed to add object: %s\n", ubus_strerror(ret));
+	exit(1);
     }
 
     //notify
