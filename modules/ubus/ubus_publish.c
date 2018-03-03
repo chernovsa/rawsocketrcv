@@ -5,7 +5,6 @@
 #include <stdio.h>
 
 #include <libubox/uloop.h>
-#include <libubox/blobmsg_json.h>
 #include <libubus.h>
 #include "ubus_publish.h"
 #define SERVICE_NAME "sniffer"
