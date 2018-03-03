@@ -21,7 +21,7 @@ static void print_ip_header(const u_char*);
 static void print_ethernet_header(const u_char*);
 static void PrintData (const u_char * , int);
 #endif
-FILE *logfile;
+
 struct sockaddr_in source,dest;
 
 int start_pcap(sniffer_arg *processArg)
@@ -91,15 +91,8 @@ int start_pcap(sniffer_arg *processArg)
     }
     printf("Done\n");
 
-    logfile=fopen("log.txt","w");
-    if(logfile==NULL)
-    {
-        printf("Unable to create file.");
-    }
-
     strcpy(src_host,processArg->src_ipaddr);
     strcpy(udp_port,processArg->src_port);
-
 
     sprintf(filter_string,filter_format,udp_port,src_host);
     printf("get filter string \'%s\'\n",filter_string);
