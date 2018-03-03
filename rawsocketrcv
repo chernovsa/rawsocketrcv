@@ -56,9 +56,10 @@ do_start()
 	   echo Already running
 	   return 1
 	fi
-	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- \
+	start-stop-daemon --start -b --quiet --pidfile $PIDFILE --exec $DAEMON -- \
 		$DAEMON_ARGS \
 		|| return 2
+	return 0
 	# Add code here, if necessary, that waits for the process to be ready
 	# to handle requests from services started subsequently which depend
 	# on this one.  As a last resort, sleep for some time.
