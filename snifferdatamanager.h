@@ -1,11 +1,7 @@
 #ifndef SNIFFERDATAMANAGER_H
 #define SNIFFERDATAMANAGER_H
 #include <mutex>              // std::mutex, std::unique_lock
-
-typedef struct{
-    uint64_t packets;
-    uint64_t bytes;
-} SnifferData;
+#include "modules/ubus/ubustypes.h"
 class SnifferDataManager{
 public:
     SnifferDataManager(int packets,int bytes);

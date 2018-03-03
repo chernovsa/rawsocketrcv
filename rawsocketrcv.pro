@@ -2,13 +2,15 @@ TEMPLATE = app
 CONFIG += console c++11
 CONFIG -= app_bundle
 CONFIG -= qt
+DEFINES+=DEBUG_OUT
 SOURCES += main.cpp \
     lpcapsocket.cpp \
     snifferdatamanager.cpp
 
 HEADERS += \
     lpcapsocket.h \
-    snifferdatamanager.h
+    snifferdatamanager.h \
+    modules/ubus/ubustypes.h
 
 #thread
 unix:!macx: LIBS += -L/usr/lib/i386-linux-gnu/ -pthread

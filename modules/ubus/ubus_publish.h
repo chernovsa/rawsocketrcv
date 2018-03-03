@@ -3,8 +3,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-int ubus_main(int argc, char **argv);
+#include "ubustypes.h"
+int ubus_main(ubus_sniffer_arg *sniff_arg);
 #ifdef __cplusplus
 }
 #endif

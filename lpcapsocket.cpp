@@ -11,18 +11,15 @@
 #include<netinet/udp.h>   //Provides declarations for udp header
 #include<netinet/tcp.h>   //Provides declarations for tcp header
 #include<netinet/ip.h>    //Provides declarations for ip header
+
 void pcap_process_packet(u_char *, const struct pcap_pkthdr *, const u_char *);
-int get_udp_payload_size(const u_char * , int);
+int get_udp_payload_size(const u_char * );
 void process_ip_packet(const u_char * , int);
-void print_ip_packet(const u_char * , int);
-void print_tcp_packet(const u_char *  , int );
 void print_udp_packet(const u_char * , int);
-void print_icmp_packet(const u_char * , int );
 void PrintData (const u_char * , int);
 
 FILE *logfile;
 struct sockaddr_in source,dest;
-int tcp=0,udp=0,icmp=0,others=0,igmp=0,total=0,i,j,udp_bytes=0;
 
 int start_pcap(sniffer_arg *processArg)
 {
@@ -33,8 +30,9 @@ int start_pcap(sniffer_arg *processArg)
     int count = 1 , n;
 
     char errbuf[PCAP_ERRBUF_SIZE];
-    char src_host[256];
-    char udp_port[256];
+    enum {PARAM_STRING_SIZE=256};
+    char src_host[PARAM_STRING_SIZE];
+    char udp_port[PARAM_STRING_SIZE];
 
     char filter_format[]="udp src port %s and src host %s and not icmp";
     char filter_string[1000];
@@ -66,14 +64,16 @@ int start_pcap(sniffer_arg *processArg)
         printf("%d. %s - %s\n" , count , device->name , device->description);
         if(device->name != NULL)
         {
+            if (!strcmp(device->name,processArg->ifname))
+                n=count;
             strcpy(devs[count] , device->name);
         }
         count++;
     }
 
     //Ask user which device to sniff
-    printf("Enter the number of the device you want to sniff : ");
-    scanf("%d" , &n);
+    //printf("Enter the number of the device you want to sniff : ");
+    //scanf("%d" , &n);
     devname = devs[n];
 
     /****set pcap filter*************/
@@ -98,23 +98,21 @@ int start_pcap(sniffer_arg *processArg)
         printf("Unable to create file.");
     }
 
+    strcpy(src_host,processArg->src_ipaddr);
+    strcpy(udp_port,processArg->src_port);
 
-    printf("Etner src host\n");
-    scanf("%s",&src_host);
-    printf("Enter udp port\n");
-    scanf("%s",udp_port);
 
     sprintf(filter_string,filter_format,udp_port,src_host);
     printf("get filter string \'%s\'\n",filter_string);
 
     if (pcap_compile(handle, &filter, filter_string, 0, net)!=0)
     {
-        fprintf(stderr, "Couldn't compile filter  %s, error: %s \n"  , filter_string,pcap_geterr);
+        fprintf(stderr, "Couldn't compile filter  %s, error: %s \n"  , filter_string,pcap_geterr(handle));
         exit(1);
     }
     if (pcap_setfilter(handle, &filter)!=0)
     {
-        fprintf(stderr, "Couldn't set filter  %s, error: %s \n"  , filter_string,pcap_geterr);
+        fprintf(stderr, "Couldn't set filter  %s, error: %s \n"  , filter_string,pcap_geterr(handle));
         exit(1);
     }
     /*****************************************/
@@ -127,50 +125,26 @@ int start_pcap(sniffer_arg *processArg)
 
 void pcap_process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *buffer)
 {
-    int size = header->len;
-
+    UNUSED(header);
     //Get the IP Header part of this packet , excluding the ethernet header
     struct iphdr *iph = (struct iphdr*)(buffer + sizeof(struct ethhdr));
-    ++total;
     switch (iph->protocol) //Check the Protocol and do accordingly...
     {
-        case 1:  //ICMP Protocol
-            ++icmp;
-            print_icmp_packet( buffer , size);
-            break;
-
-        case 2:  //IGMP Protocol
-            ++igmp;
-            break;
-
-        case 6:  //TCP Protocol
-            ++tcp;
-            print_tcp_packet(buffer , size);
-            break;
-
         case 17: //UDP Protocol
     {
-            ++udp;
-            int bytes=get_udp_payload_size(buffer,size);
-            udp_bytes+=bytes;
+            int bytes=get_udp_payload_size(buffer);
             if (args)
             {
             sniffer_arg* processArg=(sniffer_arg*)args;
             (*processArg->handler)(processArg->instance,bytes);
             }
-            print_udp_packet(buffer , size);
+//            print_udp_packet(buffer , size);
     }
             break;
-
-        default: //Some Other Protocol like ARP etc.
-            ++others;
-            break;
     }
-    printf("TCP : %d   UDP : %d   ICMP : %d   IGMP : %d   Others : %d   Total : %d UDP bytes : %d\r", tcp , udp , icmp , igmp , others , total,udp_bytes);
-    fflush(stdout);
 }
 
-void print_ethernet_header(const u_char *Buffer, int Size)
+void print_ethernet_header(const u_char *Buffer)
 {
     struct ethhdr *eth = (struct ethhdr *)Buffer;
 
@@ -181,14 +155,11 @@ void print_ethernet_header(const u_char *Buffer, int Size)
     fprintf(logfile , "   |-Protocol            : %u \n",(unsigned short)eth->h_proto);
 }
 
-void print_ip_header(const u_char * Buffer, int Size)
+void print_ip_header(const u_char * Buffer)
 {
-    print_ethernet_header(Buffer , Size);
-
-    unsigned short iphdrlen;
+    print_ethernet_header(Buffer);
 
     struct iphdr *iph = (struct iphdr *)(Buffer  + sizeof(struct ethhdr) );
-    iphdrlen =iph->ihl*4;
 
     memset(&source, 0, sizeof(source));
     source.sin_addr.s_addr = iph->saddr;
@@ -213,56 +184,7 @@ void print_ip_header(const u_char * Buffer, int Size)
     fprintf(logfile , "   |-Destination IP   : %s\n" , inet_ntoa(dest.sin_addr) );
 }
 
-void print_tcp_packet(const u_char * Buffer, int Size)
-{
-    unsigned short iphdrlen;
-
-    struct iphdr *iph = (struct iphdr *)( Buffer  + sizeof(struct ethhdr) );
-    iphdrlen = iph->ihl*4;
-
-    struct tcphdr *tcph=(struct tcphdr*)(Buffer + iphdrlen + sizeof(struct ethhdr));
-
-    int header_size =  sizeof(struct ethhdr) + iphdrlen + tcph->doff*4;
-
-    fprintf(logfile , "\n\n***********************TCP Packet*************************\n");
-
-    print_ip_header(Buffer,Size);
-
-    fprintf(logfile , "\n");
-    fprintf(logfile , "TCP Header\n");
-    fprintf(logfile , "   |-Source Port      : %u\n",ntohs(tcph->source));
-    fprintf(logfile , "   |-Destination Port : %u\n",ntohs(tcph->dest));
-    fprintf(logfile , "   |-Sequence Number    : %u\n",ntohl(tcph->seq));
-    fprintf(logfile , "   |-Acknowledge Number : %u\n",ntohl(tcph->ack_seq));
-    fprintf(logfile , "   |-Header Length      : %d DWORDS or %d BYTES\n" ,(unsigned int)tcph->doff,(unsigned int)tcph->doff*4);
-    //fprintf(logfile , "   |-CWR Flag : %d\n",(unsigned int)tcph->cwr);
-    //fprintf(logfile , "   |-ECN Flag : %d\n",(unsigned int)tcph->ece);
-    fprintf(logfile , "   |-Urgent Flag          : %d\n",(unsigned int)tcph->urg);
-    fprintf(logfile , "   |-Acknowledgement Flag : %d\n",(unsigned int)tcph->ack);
-    fprintf(logfile , "   |-Push Flag            : %d\n",(unsigned int)tcph->psh);
-    fprintf(logfile , "   |-Reset Flag           : %d\n",(unsigned int)tcph->rst);
-    fprintf(logfile , "   |-Synchronise Flag     : %d\n",(unsigned int)tcph->syn);
-    fprintf(logfile , "   |-Finish Flag          : %d\n",(unsigned int)tcph->fin);
-    fprintf(logfile , "   |-Window         : %d\n",ntohs(tcph->window));
-    fprintf(logfile , "   |-Checksum       : %d\n",ntohs(tcph->check));
-    fprintf(logfile , "   |-Urgent Pointer : %d\n",tcph->urg_ptr);
-    fprintf(logfile , "\n");
-    fprintf(logfile , "                        DATA Dump                         ");
-    fprintf(logfile , "\n");
-
-    fprintf(logfile , "IP Header\n");
-    PrintData(Buffer,iphdrlen);
-
-    fprintf(logfile , "TCP Header\n");
-    PrintData(Buffer+iphdrlen,tcph->doff*4);
-
-    fprintf(logfile , "Data Payload\n");
-    PrintData(Buffer + header_size , Size - header_size );
-
-    fprintf(logfile , "\n###########################################################");
-}
-
-int get_udp_payload_size(const u_char *Buffer , int Size)
+int get_udp_payload_size(const u_char *Buffer)
 {
     unsigned short iphdrlen;
 
@@ -270,8 +192,6 @@ int get_udp_payload_size(const u_char *Buffer , int Size)
     iphdrlen = iph->ihl*4;
 
     struct udphdr *udph = (struct udphdr*)(Buffer + iphdrlen  + sizeof(struct ethhdr));
-
-    int header_size =  sizeof(struct ethhdr) + iphdrlen + sizeof udph;
 
     int udp_payload_len=ntohs(udph->len)-sizeof(udphdr);
     return udp_payload_len;
@@ -291,7 +211,7 @@ void print_udp_packet(const u_char *Buffer , int Size)
 
     fprintf(logfile , "\n\n***********************UDP Packet*************************\n");
 
-    print_ip_header(Buffer,Size);
+    print_ip_header(Buffer);
 
     fprintf(logfile , "\nUDP Header\n");
     fprintf(logfile , "   |-Source Port      : %d\n" , ntohs(udph->source));
@@ -310,55 +230,6 @@ void print_udp_packet(const u_char *Buffer , int Size)
 
     //Move the pointer ahead and reduce the size of string
     PrintData(Buffer + header_size , Size - header_size);
-
-    fprintf(logfile , "\n###########################################################");
-}
-
-void print_icmp_packet(const u_char * Buffer , int Size)
-{
-    unsigned short iphdrlen;
-
-    struct iphdr *iph = (struct iphdr *)(Buffer  + sizeof(struct ethhdr));
-    iphdrlen = iph->ihl * 4;
-
-    struct icmphdr *icmph = (struct icmphdr *)(Buffer + iphdrlen  + sizeof(struct ethhdr));
-
-    int header_size =  sizeof(struct ethhdr) + iphdrlen + sizeof icmph;
-
-    fprintf(logfile , "\n\n***********************ICMP Packet*************************\n");
-
-    print_ip_header(Buffer , Size);
-
-    fprintf(logfile , "\n");
-
-    fprintf(logfile , "ICMP Header\n");
-    fprintf(logfile , "   |-Type : %d",(unsigned int)(icmph->type));
-
-    if((unsigned int)(icmph->type) == 11)
-    {
-        fprintf(logfile , "  (TTL Expired)\n");
-    }
-    else if((unsigned int)(icmph->type) == ICMP_ECHOREPLY)
-    {
-        fprintf(logfile , "  (ICMP Echo Reply)\n");
-    }
-
-    fprintf(logfile , "   |-Code : %d\n",(unsigned int)(icmph->code));
-    fprintf(logfile , "   |-Checksum : %d\n",ntohs(icmph->checksum));
-    //fprintf(logfile , "   |-ID       : %d\n",ntohs(icmph->id));
-    //fprintf(logfile , "   |-Sequence : %d\n",ntohs(icmph->sequence));
-    fprintf(logfile , "\n");
-
-    fprintf(logfile , "IP Header\n");
-    PrintData(Buffer,iphdrlen);
-
-    fprintf(logfile , "UDP Header\n");
-    PrintData(Buffer + iphdrlen , sizeof icmph);
-
-    fprintf(logfile , "Data Payload\n");
-
-    //Move the pointer ahead and reduce the size of string
-    PrintData(Buffer + header_size , (Size - header_size) );
 
     fprintf(logfile , "\n###########################################################");
 }

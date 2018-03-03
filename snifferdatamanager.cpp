@@ -14,7 +14,7 @@ void SnifferDataManager::onPacketReceived(int bytes){
          <<" packets="
         <<mPackets
        <<" bytes="
-      <<mBytes;
+      <<mBytes<<std::endl;
 #endif
 }
 
@@ -25,4 +25,8 @@ void SnifferDataManager::populateData(SnifferData *data){
     data->packets=mPackets;
     data->bytes=mBytes;
     }
+#ifdef DEBUG_OUT
+    std::cout<<"populateData "
+            <<std::endl;
+#endif
 }
