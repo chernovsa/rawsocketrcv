@@ -7,6 +7,7 @@
 #include <libubox/uloop.h>
 #include <libubus.h>
 #include "ubus_publish.h"
+#define UNUSED(x) (void)(x)
 #define SERVICE_NAME "sniffer"
 #define METHOD_NAME "status"
 #define EVENT_NAME "sniffer.status"
@@ -19,7 +20,8 @@ static ubus_sniffer_arg *sniffer_arg=NULL;
 
 static void test_client_subscribe_cb(struct ubus_context *ctx, struct ubus_object *obj)
 {
-        fprintf(stderr, "Subscribers active: %d\n", obj->has_subscribers);
+    UNUSED(ctx);
+    fprintf(stderr, "Subscribers active: %d\n", obj->has_subscribers);
 }
 
 static void test_client_notify_cb(struct uloop_timeout *timeout);
@@ -35,6 +37,9 @@ status_handler(struct ubus_context *ctx, struct ubus_object *obj,
         struct ubus_request_data *req, const char *method,
         struct blob_attr *msg)
 {
+    UNUSED(obj);
+    UNUSED(method);
+    UNUSED(msg);
     createMessage(snifferData.packets,snifferData.bytes,&b);
     ubus_send_reply(ctx, req, b.head);
 

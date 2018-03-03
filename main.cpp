@@ -3,7 +3,7 @@
 #include <cstring>
 #include "snifferdatamanager.h"
 #include "lpcapsocket.h"
-#include "ubus_publish.h"
+#include "modules/ubus/ubus_publish.h"
 
 void pcap_process_packet(char *keeper, int bytes)
 {
