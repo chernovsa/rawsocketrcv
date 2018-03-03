@@ -11,11 +11,11 @@
 #define SERVICE_NAME "sniffer"
 #define METHOD_NAME "status"
 #define EVENT_NAME "sniffer.status"
-static struct ubus_context *ctx;
+static struct ubus_context *ctx=NULL;
 static struct blob_buf b;
 
 static SnifferData snifferData={0,0};
-static ubus_sniffer_arg *sniffer_arg;
+static ubus_sniffer_arg *sniffer_arg=NULL;
 
 
 static void test_client_subscribe_cb(struct ubus_context *ctx, struct ubus_object *obj)
@@ -74,7 +74,8 @@ static void test_client_notify_cb(struct uloop_timeout *timeout)
         int timer=2000;
         if (sniffer_arg)
         {
-            (*sniffer_arg->handler)(sniffer_arg->instance,&snifferData);
+            if (sniffer_arg->handler)
+                (*sniffer_arg->handler)(sniffer_arg->instance,&snifferData);
             timer=sniffer_arg->time_period;
         }
         createMessage(snifferData.packets,snifferData.bytes,&b);
@@ -91,25 +92,9 @@ static void test_client_notify_cb(struct uloop_timeout *timeout)
 
 int ubus_main(ubus_sniffer_arg *sniff_arg)
 {
-    int argc=0;
-    char **argv=0;
     sniffer_arg=sniff_arg;
     const char *ubus_socket = NULL;
     int ret;
-    int ch;
-
-    while ((ch = getopt(argc, argv, "cs:")) != -1) {
-        switch (ch) {
-        case 's':
-            ubus_socket = optarg;
-            break;
-        default:
-            break;
-        }
-    }
-
-    argc -= optind;
-    argv += optind;
 
     uloop_init();
     signal(SIGPIPE, SIG_IGN);
@@ -140,7 +125,7 @@ int ubus_main(ubus_sniffer_arg *sniff_arg)
 #ifdef TEST_UBUS
 int main(int argc, char **argv)
 {
-ubus_main(argc,argv);
-return 0;
+ubus_sniffer_arg sniff_arg={NULL,NULL,2000};
+return ubus_main(sniff_arg);
 }
 #endif

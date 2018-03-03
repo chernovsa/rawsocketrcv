@@ -24,6 +24,10 @@ struct sockaddr_in source,dest;
 
 int start_pcap(sniffer_arg *processArg)
 {
+    if (!processArg){
+        fprintf(stderr, "sniffer_arg should be not NULL!\n");
+        exit(1);
+    }
     pcap_if_t *alldevsp , *device;
     pcap_t *handle; //Handle of the device that shall be sniffed
 
@@ -136,7 +140,8 @@ void pcap_process_packet(u_char *args, const struct pcap_pkthdr *header, const u
             if (args)
             {
             sniffer_arg* processArg=(sniffer_arg*)args;
-            (*processArg->handler)(processArg->instance,bytes);
+            if (processArg->handler)
+                (*processArg->handler)(processArg->instance,bytes);
             }
 //            print_udp_packet(buffer , size);
     }
