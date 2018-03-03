@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 
 PROJECT(rawsocketrcv)
 ADD_DEFINITIONS(-Wall -W -fPIE -Os -Werror -Wmissing-declarations)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -g -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -g -std=c++11 -pthread")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --std=gnu99 -g3")
 
 FIND_LIBRARY(ubox_library NAMES ubox)
