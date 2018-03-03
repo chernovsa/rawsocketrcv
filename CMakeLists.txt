@@ -8,10 +8,6 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --std=gnu99 -g3")
 FIND_LIBRARY(ubox_library NAMES ubox)
 FIND_PATH(ubox_include_dir libubox/uloop.h)
 INCLUDE_DIRECTORIES(${ubox_include_dir})
-#if (NOT ubox_library)
-#message(SEND_ERROR "Failed to find ubox library ${ubox_library}")
-#	return()
-#endif()
  
 FIND_LIBRARY(ubus_library NAMES ubus)
 FIND_PATH(ubus_include_dir libubus.h)
@@ -31,12 +27,15 @@ ADD_EXECUTABLE(rawsocketrcv lpcapsocket.cpp  main.cpp  snifferdatamanager.cpp)
 SET_TARGET_PROPERTIES(rawsocketrcv PROPERTIES OUTPUT_NAME rawsocketrcvd)
 TARGET_LINK_LIBRARIES(rawsocketrcv ${thread_library} ${pcap_library} ubus_publish ${ubox_library} ${ubus_library})
 
-#INSTALL(TARGETS ubus cli
-#	LIBRARY DESTINATION lib
-#	RUNTIME DESTINATION bin
-#)
-#INSTALL(TARGETS ubusd
-#	RUNTIME DESTINATION sbin
-#)
+INSTALL(TARGETS rawsocketrcv
+	RUNTIME DESTINATION /usr/local/bin
+)
 
-#INSTALL(FILES ubusmsg.h ubus_common.h libubus.h DESTINATION include)
+INSTALL(FILES default_rawsocketrcvd DESTINATION /etc/default
+	RENAME rawsocketrcvd	
+)
+INSTALL(FILES rawsocketrcv DESTINATION /etc/init.d
+	PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+                    GROUP_EXECUTE GROUP_READ WORLD_EXECUTE	
+	            WORLD_READ
+)
