@@ -2,12 +2,15 @@ TEMPLATE = app
 CONFIG += console c++11
 CONFIG -= app_bundle
 CONFIG -= qt
-
 SOURCES += main.cpp \
     lpcapsocket.cpp
 
 HEADERS += \
     lpcapsocket.h
+
+#thread
+unix:!macx: LIBS += -L/usr/lib/i386-linux-gnu/ -pthread
+#QMAKE_CXXFLAGS += -Wl,--no-as-needed -std=c++11
 #pcap
 unix:!macx: LIBS += -L/usr/lib/i386-linux-gnu/ -lpcap
 
