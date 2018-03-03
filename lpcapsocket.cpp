@@ -58,10 +58,10 @@ int start_pcap(sniffer_arg *processArg)
     printf("Finding available devices ... ");
     if( pcap_findalldevs( &alldevsp , errbuf) )
     {
-        printf("Error finding devices : %s" , errbuf);
+        fprintf(stderr, "Error finding devices : %s\n" , errbuf);
         exit(1);
     }
-    printf("Done");
+    printf("Done\n");
 
     //Print the available devices
     printf("\nAvailable Devices are :\n");
@@ -81,7 +81,7 @@ int start_pcap(sniffer_arg *processArg)
     /****set pcap filter*************/
     pcap_lookupnet(devname, &net, &mask, errbuf);
     //Open the device for sniffing
-    printf("Opening device %s for sniffing ... " , devname);
+    printf("Opening device %s for sniffing ... \n" , devname);
     handle = pcap_open_live(devname , 65536 , 1 , 0 , errbuf);
 
     if (handle == NULL)
