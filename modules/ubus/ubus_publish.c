@@ -70,29 +70,20 @@ static struct ubus_object test_client_object = {
 static void test_client_notify_cb(struct uloop_timeout *timeout)
 {
         int err;
-        struct timeval tv1, tv2;
-        int max = 1000;
-        long delta;
-        int i = 0;
-
         int timer=2000;
         if (sniffer_arg)
         {
             (*sniffer_arg->handler)(sniffer_arg->instance,&snifferData);
             timer=sniffer_arg->time_period;
         }
-
-
-
         createMessage(snifferData.packets,snifferData.bytes,&b);
-        gettimeofday(&tv1, NULL);
         err = ubus_notify(ctx, &test_client_object, METHOD_NAME, b.head, 1000);
-        gettimeofday(&tv2, NULL);
         if (err)
                 fprintf(stderr, "Notify failed: %s\n", ubus_strerror(err));
 
-        delta = (tv2.tv_sec - tv1.tv_sec) * 1000000 + (tv2.tv_usec - tv1.tv_usec);
-        fprintf(stderr, "Avg time per iteration: %ld usec\n", delta / max);
+        err=ubus_send_event(ctx,METHOD_NAME,b.head);
+        if (err)
+                fprintf(stderr, "Event failed: %s\n", ubus_strerror(err));
 
         uloop_timeout_set(timeout, timer);
 }
