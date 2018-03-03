@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
+ADD_DEFINITIONS(-Os -Wall -Werror --std=gnu99 -g3 -Wmissing-declarations)
 ADD_DEFINITIONS(-I..)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/..)
 ADD_LIBRARY(ubus_publish STATIC ubus_publish.c)
