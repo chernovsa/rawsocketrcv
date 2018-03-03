@@ -42,11 +42,6 @@ status_handler(struct ubus_context *ctx, struct ubus_object *obj,
     return 0;
 }
 
-enum {
-    ADD_VALUE,
-    __ADD_MAX
-};
-
 static const struct ubus_method methods[] = {
     { .name = METHOD_NAME , .handler = status_handler } ,
 };
