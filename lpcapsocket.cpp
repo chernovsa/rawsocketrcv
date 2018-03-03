@@ -13,12 +13,14 @@
 #include<netinet/ip.h>    //Provides declarations for ip header
 
 #define UNUSED(x) (void)(x)
-void pcap_process_packet(u_char *, const struct pcap_pkthdr *, const u_char *);
-int get_udp_payload_size(const u_char * );
-void process_ip_packet(const u_char * , int);
-void print_udp_packet(const u_char * , int);
-void PrintData (const u_char * , int);
-
+static void pcap_process_packet(u_char *, const struct pcap_pkthdr *, const u_char *);
+static int get_udp_payload_size(const u_char * );
+#ifdef PRINT_PACKET
+static void print_udp_packet(const u_char * , int);
+static void print_ip_header(const u_char*);
+static void print_ethernet_header(const u_char*);
+static void PrintData (const u_char * , int);
+#endif
 FILE *logfile;
 struct sockaddr_in source,dest;
 
@@ -32,7 +34,7 @@ int start_pcap(sniffer_arg *processArg)
     pcap_t *handle; //Handle of the device that shall be sniffed
 
     char *devname , devs[100][100];
-    int count = 1 , n;
+    int count = 1 , n=0;
 
     char errbuf[PCAP_ERRBUF_SIZE];
     char src_host[PARAM_STRING_SIZE];
@@ -74,16 +76,9 @@ int start_pcap(sniffer_arg *processArg)
         }
         count++;
     }
-
-    //Ask user which device to sniff
-    //printf("Enter the number of the device you want to sniff : ");
-    //scanf("%d" , &n);
     devname = devs[n];
 
     /****set pcap filter*************/
-    // Строка с ошибкой
-
-
     pcap_lookupnet(devname, &net, &mask, errbuf);
     //Open the device for sniffing
     printf("Opening device %s for sniffing ... " , devname);
@@ -126,6 +121,18 @@ int start_pcap(sniffer_arg *processArg)
     return pcap_loop(handle , -1 , pcap_process_packet , (u_char*)processArg);
 
 }
+int get_udp_payload_size(const u_char *Buffer)
+{
+    unsigned short iphdrlen;
+
+    struct iphdr *iph = (struct iphdr *)(Buffer +  sizeof(struct ethhdr));
+    iphdrlen = iph->ihl*4;
+
+    struct udphdr *udph = (struct udphdr*)(Buffer + iphdrlen  + sizeof(struct ethhdr));
+
+    int udp_payload_len=ntohs(udph->len)-sizeof(udphdr);
+    return udp_payload_len;
+}
 
 void pcap_process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *buffer)
 {
@@ -143,12 +150,16 @@ void pcap_process_packet(u_char *args, const struct pcap_pkthdr *header, const u
             if (processArg->handler)
                 (*processArg->handler)(processArg->instance,bytes);
             }
-//            print_udp_packet(buffer , size);
+#ifdef PRINT_PACKET
+            print_udp_packet(buffer , size);
+#endif
     }
             break;
     }
 }
 
+
+#ifdef PRINT_PACKET
 void print_ethernet_header(const u_char *Buffer)
 {
     struct ethhdr *eth = (struct ethhdr *)Buffer;
@@ -187,19 +198,6 @@ void print_ip_header(const u_char * Buffer)
     fprintf(logfile , "   |-Checksum : %d\n",ntohs(iph->check));
     fprintf(logfile , "   |-Source IP        : %s\n" , inet_ntoa(source.sin_addr) );
     fprintf(logfile , "   |-Destination IP   : %s\n" , inet_ntoa(dest.sin_addr) );
-}
-
-int get_udp_payload_size(const u_char *Buffer)
-{
-    unsigned short iphdrlen;
-
-    struct iphdr *iph = (struct iphdr *)(Buffer +  sizeof(struct ethhdr));
-    iphdrlen = iph->ihl*4;
-
-    struct udphdr *udph = (struct udphdr*)(Buffer + iphdrlen  + sizeof(struct ethhdr));
-
-    int udp_payload_len=ntohs(udph->len)-sizeof(udphdr);
-    return udp_payload_len;
 }
 
 void print_udp_packet(const u_char *Buffer , int Size)
@@ -241,7 +239,8 @@ void print_udp_packet(const u_char *Buffer , int Size)
 
 void PrintData (const u_char * data , int Size)
 {
-    int i , j;
+    int i=0;
+    int j=0;
     for(i=0 ; i < Size ; i++)
     {
         if( i!=0 && i%16==0)   //if one line of hex printing is complete...
@@ -285,3 +284,4 @@ void PrintData (const u_char * data , int Size)
         }
     }
 }
+#endif

@@ -5,6 +5,9 @@
 #include "lpcapsocket.h"
 #include "modules/ubus/ubus_publish.h"
 
+void pcap_process_packet(char*, int);
+void ubus_process_notify(char*,SnifferData *);
+
 void pcap_process_packet(char *keeper, int bytes)
 {
     if (keeper)
