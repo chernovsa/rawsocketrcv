@@ -66,7 +66,7 @@ static struct uloop_timeout notify_timer = {
 static struct ubus_object test_client_object = {
         .subscribe_cb = test_client_subscribe_cb,
 };
-
+enum {SEND_WITHOUT_REPLY};
 static void test_client_notify_cb(struct uloop_timeout *timeout)
 {
         int err;
@@ -78,7 +78,7 @@ static void test_client_notify_cb(struct uloop_timeout *timeout)
             timer=sniffer_arg->time_period;
         }
         createMessage(snifferData.packets,snifferData.bytes,&b);
-        err = ubus_notify(ctx, &test_client_object, METHOD_NAME, b.head, 1000);
+        err = ubus_notify(ctx, &test_client_object, METHOD_NAME, b.head, SEND_WITHOUT_REPLY);
         if (err)
                 fprintf(stderr, "Notify failed: %s\n", ubus_strerror(err));
 
